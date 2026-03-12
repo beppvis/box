@@ -47,11 +47,13 @@ pub const TokenType = enum {
 
     EOF,
 };
-pub const Numeric = union {
+pub const NumericTag = enum{float,int};
+pub const Numeric = union(NumericTag) {
     float:f32,
     int: i32,
 };
-pub const Literal = union { numeric: Numeric, string: []const u8 };
+pub const LiteralTag =  enum {numeric ,string};
+pub const Literal = union(LiteralTag) { numeric: Numeric, string: []const u8 };
 
 pub const Token = struct {
     tokenType: TokenType,
@@ -66,5 +68,21 @@ pub const Token = struct {
             .lexeme = lexeme,
             .line = line
         };
+    }
+    pub fn literalToString(self:*const Self,allocator:std.mem.Allocator) ![]const u8{
+        if (self.literal) |value|{
+            switch (value) {
+                .string => {return try std.fmt.allocPrint(allocator, "{s}",.{value.string});},
+                .numeric => {
+                    switch (value.numeric) {
+                        .float => {return try std.fmt.allocPrint(allocator,"{d}",.{value.numeric.float});},
+                        .int=> {return try std.fmt.allocPrint(allocator,"{d}",.{value.numeric.int});},
+                    }
+                },
+            }
+        }
+        else{
+            return try std.fmt.allocPrint(allocator, "null",.{});
+        }
     }
 };

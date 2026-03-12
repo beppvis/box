@@ -15,7 +15,14 @@ pub fn run(allocator:std.mem.Allocator,code: []const u8) !void{
     var scn = try Scanner.init(allocator,code);
     defer scn.deinit(allocator);
     try scn.scanTokens();
-    std.debug.print("{any}\n", .{scn.tokens.items});
+    for (scn.tokens.items) |token| {
+        std.debug.print("{any}\n", .{token});
+        if (token.literal) |_|{
+            const literalString = try token.literalToString(allocator);
+            defer allocator.free(literalString);
+            std.debug.print("Literal Value {s}\n", .{literalString});
+        }
+    }
 }
 
 pub fn runFile(allocator: std.mem.Allocator, fileName: [:0]u8) !void{
