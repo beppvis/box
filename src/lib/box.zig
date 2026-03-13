@@ -1,5 +1,7 @@
 
 pub const BoxError = error{
     InvalidToken,
-    StringNotTerminated
+    StringNotTerminated,
+    NumericValueNotTerminated
+
 };

@@ -1,6 +1,6 @@
 const std = @import("std");
 const token = @import("token.zig");
-const Token = token.Token; 
+const Token = token.Token;
 const box = @import("box.zig");
 const BoxError = box.BoxError;
 const TokenType = token.TokenType;
@@ -96,13 +96,44 @@ pub const Scanner = struct {
                 self.line += 1;
             },
             '"' => {
-                try self.addTokenObj(TokenType.STRING,token.Literal{.string = try self.string()});
+                try self.addTokenObj(TokenType.STRING, token.Literal{ .string = try self.string() });
             },
             else => {
+                if (isDigit(c)) {
+                    return self.addTokenObj(TokenType.NUMBER, token.Literal{ .numeric = try self.numeric() });
+                }
                 return BoxError.InvalidToken;
             },
         }
     }
+
+    pub fn numeric(self: *Self) !token.Numeric {
+        while (isDigit(self.peek()) and !self.isAtEnd()) {
+            _ = self.advance();
+        }
+        if (self.peek() == '.' and isDigit(self.peekNext())) {
+            _ = self.advance();
+            while (isDigit(self.peek()) and !self.isAtEnd()) {
+                _ = self.advance();
+            }
+        } else {
+            return token.Numeric{ .int = try std.fmt.parseInt(i32, self.source[self.start .. self.current ], 10) };
+        }
+        return token.Numeric{ .float = try std.fmt.parseFloat(f32, self.source[self.start .. self.current ]) };
+    }
+
+    pub fn peekNext(self: *Self) u8 {
+        if (self.current + 1 >= self.source.len) {
+            return '\x00';
+        } else {
+            return self.source[self.current + 1];
+        }
+    }
+
+    pub fn isDigit(c: u8) bool {
+        return if (c >= '0' and c <= '9') true else false;
+    }
+
     pub fn string(self: *Self) ![]const u8 {
         while (self.peek() != '"' and !self.isAtEnd()) {
             if (self.peek() == '\n')
